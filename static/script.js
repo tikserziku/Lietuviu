@@ -1,5 +1,12 @@
 document.getElementById('submitButton').addEventListener('click', () => {
     const text = document.getElementById('inputText').value;
+    const button = document.getElementById('submitButton');
+    const outputText = document.getElementById('outputText');
+    
+    // Disable button and show loading state
+    button.disabled = true;
+    button.textContent = 'Обработка...';
+    outputText.innerText = 'Подождите, текст обрабатывается...';
 
     fetch('/process', {
         method: 'POST',
@@ -10,15 +17,20 @@ document.getElementById('submitButton').addEventListener('click', () => {
     })
     .then(response => {
         if (!response.ok) {
-            return response.json().then(errorInfo => Promise.reject(errorInfo));
+            throw new Error('Network response was not ok');
         }
         return response.json();
     })
     .then(data => {
-        document.getElementById('outputText').innerText = data.processed_text;
+        outputText.innerText = data.processed_text;
     })
     .catch(error => {
         console.error('Ошибка:', error);
-        document.getElementById('outputText').innerText = 'Произошла ошибка при обработке запроса.';
+        outputText.innerText = 'Произошла ошибка при обработке запроса. Пожалуйста, попробуйте позже.';
+    })
+    .finally(() => {
+        // Re-enable button and restore original text
+        button.disabled = false;
+        button.textContent = 'Проверить';
     });
 });
