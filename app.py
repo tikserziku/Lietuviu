@@ -1,24 +1,85 @@
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+from anthropic import Anthropic
+import os
+import logging
+import random
+
+app = Flask(__name__)
+CORS(app)
+
+logging.basicConfig(level=logging.INFO)
+
+anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
+
+if not anthropic_api_key:
+    app.logger.error("Anthropic API raktas nerastas.")
+else:
+    anthropic = Anthropic(api_key=anthropic_api_key)
+
+FEEDBACK_MESSAGES = {
+    'perfect': [
+        "🌟 Nerealu! Viskas tobulai! 🏆",
+        "🚀 WOW! Rašai kaip profesionalas! ⭐",
+        "🎯 Šaunuolis! Viskas teisingai! 🧠",
+        "🦄 Super! Nė vienos klaidos! ✨",
+    ],
+    'good': [
+        "😎 Beveik tobulai! Dar truputį ir būsi TOP! 💫",
+        "🎮 Pro lygio tekstas! Liko tik smulkmenos! 🎯",
+        "💪 Labai gerai! Jau beveik tobulai! 🌟",
+        "🎸 Nice! Tik kelios mažos klaidelės! 🤘",
+    ],
+    'average': [
+        "👾 Neblogai, bet gali dar geriau! 💪",
+        "🎮 Progresas matosi! Dar padirbėk! 🎯",
+        "🌈 Jau neblogai, bet yra ką tobulinti! 🎯",
+        "🎪 Vidutiniškai, bet tu gali geriau! 🔥",
+    ],
+    'needs_work': [
+        "😅 Reikia dar padirbėti! Nesijaudink, kartu pavyks! 💪",
+        "🎮 Challenge mode ON! Bandyk dar kartą! 🌟",
+        "🌱 Kiekviena klaida - tai pamoka! 🆙",
+        "🎨 Keep calm ir mokykis toliau! 💫",
+    ]
+}
+
+def get_random_feedback(error_count):
+    if error_count == 0:
+        return random.choice(FEEDBACK_MESSAGES['perfect'])
+    elif error_count <= 2:
+        return random.choice(FEEDBACK_MESSAGES['good'])
+    elif error_count <= 5:
+        return random.choice(FEEDBACK_MESSAGES['average'])
+    else:
+        return random.choice(FEEDBACK_MESSAGES['needs_work'])
+
 def process_with_claude(text):
     prompt = f"""
-Išanalizuokite šį lietuvišką tekstą:
-1. Patikrinkite rašybos ir gramatikos klaidas
-2. Sutvarkykite skyrybą
-3. Pažymėkite kirčiuotus skiemenis naudojant akūto ženklą (´) virš kirčiuotos balsės
-4. Suskaičiuokite visas klaidas (rašybos, gramatikos ir skyrybos)
+Tu esi labai kvalifikuotas lietuvių kalbos mokytojas. Išanalizuok šį tekstą:
 
-Tekstas:
+1. Rask visas rašybos klaidas (neteisingai parašyti žodžiai)
+2. Rask gramatikos klaidas
+3. Patikrink skyrybą
+4. Pažymėk kirčiuotus skiemenis VISADA naudodamas akūto ženklą (´) virš kirčiuotos balsės
+5. Perskaičiuok VISAS klaidas
+
+Pavyzdys kirčiavimo:
+- Lãbas → Lábas
+- Rýtas → Rýtas
+- Mokykla → Mokyklà
+
+Tekstas analizei:
 \"""
 {text}
 \"""
 
-Grąžinkite JSON objektą su:
+Pateik rezultatą JSON formatu:
 {{
     "corrected_text": "pataisytas tekstas su kirčiais",
-    "error_count": klaidų skaičius,
-    "error_details": "trumpas klaidų aprašymas"
-}}
-
-Pastaba: kirčiuokite tik tuos žodžius, kurie turi aiškų kirčiavimą pagal lietuvių kalbos taisykles."""
+    "error_count": bendras klaidų skaičius,
+    "errors_found": ["klaida1", "klaida2", ...]
+}}"""
 
     try:
         response = anthropic.messages.create(
@@ -33,20 +94,36 @@ Pastaba: kirčiuokite tik tuos žodžius, kurie turi aiškų kirčiavimą pagal 
         
         import json
         result = json.loads(response.content[0].text.strip())
+        result['feedback'] = get_random_feedback(result['error_count'])
         
-        # Добавляем обратную связь только если есть ошибки
-        if result['error_count'] > 0:
-            result['feedback'] = get_random_feedback(result['error_count'])
-        else:
-            result['feedback'] = "🌟 Puiku! Tekstas parašytas be klaidų! ⭐"
-            
         return result
-        
     except Exception as e:
         app.logger.error(f"API klaida: {e}")
         return {
             "corrected_text": text,
             "error_count": 0,
-            "error_details": "Įvyko klaida analizuojant tekstą",
+            "errors_found": [],
             "feedback": "😅 Atsiprašome, įvyko klaida! Bandykite dar kartą! 🔄"
         }
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/process', methods=['POST'])
+def process_text():
+    data = request.get_json()
+    text = data.get('text', '').strip()
+    
+    if not text:
+        return jsonify({
+            "corrected_text": "",
+            "error_count": 0,
+            "feedback": "Prašome įvesti tekstą!"
+        })
+    
+    result = process_with_claude(text)
+    return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True)
