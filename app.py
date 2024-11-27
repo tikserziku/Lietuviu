@@ -12,31 +12,30 @@ logging.basicConfig(level=logging.INFO)
 
 anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
 
-# Словарь с забавными комментариями на разные уровни ошибок
 FEEDBACK_MESSAGES = {
     'perfect': [
-        "🔥 Nerealu! Tu čia kaip koks genijus! 🌟",
-        "🚀 Vauuu, čia tikras kosmosas! Tobula! ⭐",
-        "🎯 Šimtas iš šimto! Esi protingesnis už GPT! 🧠",
-        "🦄 OMG! Čia tiesiog idealu! Neįtikėtina! ✨",
+        "🌟 Nuostabu! Tobulas tekstas! 🏆",
+        "🚀 WOW! Čia tai bent - nė vienos klaidos! ⭐",
+        "🎯 100 iš 100! Tu tikras genijus! 🧠",
+        "🦄 OMG! Čia tiesiog super! ✨",
     ],
     'good': [
-        "😎 Beveik tobula! Dar truputis ir būsi legendinis! 💫",
-        "🎮 Level: PRO! Liko tik keli boss'ai įveikti! 🎯",
-        "💪 Stipru! Beveik kaip Einšteinas! 🧪",
-        "🎸 Čia tai bent! Rašai geriau nei ChatGPT! 🤖",
+        "😎 Beveik tobula! Dar biški ir būsi top! 💫",
+        "🎮 Pro lygio tekstas! 🎯",
+        "💪 Labai gerai! Tik kelios smulkios klaidelės! 🌟",
+        "🎸 Nice! Beveik idealiai! 🤘",
     ],
     'average': [
-        "👾 Nėra blogai, bet gali dar geriau! Push'inam toliau! 💪",
-        "🎮 Level up needed! Bet jau neblogai kapoji! 🎯",
-        "🌈 Visai neblogai! Dar biški patreniruosim ir bus perfect! 🎯",
-        "🎪 Jau gerėja! Dar truputis praktikos ir būsi boss! 🔥",
+        "👾 Normaliai! Bet gali dar geriau! 💪",
+        "🎮 Progresas matosi! Dar biški! 🎯",
+        "🌈 Vidutiniškai, bet jau gerėja! 🎯",
+        "🎪 Ne blogai, bet dar yra kur tobulėti! 🔥",
     ],
     'needs_work': [
-        "😅 Ups... Reikia dar padirbėti! Bet nesijaudink - visi nuo to pradeda! 💪",
-        "🎮 Tutorial mode: ON! Kartu išmoksim! 🌟",
-        "🌱 Viskas gerai! Kiekviena klaida - naujas level up! 🆙",
-        "🎨 Klaidos - tai tik steppingstones į tobulumą! 💫",
+        "😅 Reikia dar padirbėti! Bet tu tikrai gali! 💪",
+        "🎮 Challenge accepted! Kitą kartą bus geriau! 🌟",
+        "🌱 Kiekviena klaida - tai galimybė tobulėti! 🆙",
+        "🎨 Nešvaistyk laiko liūdėjimui - geriau mokykis! 💫",
     ]
 }
 
@@ -52,19 +51,21 @@ def get_random_feedback(error_count):
 
 def process_with_claude(text):
     prompt = f"""
-Išanalizuokite šį tekstą ir pateikite:
-1. Ištaisytą tekstą su visais kirčiais ir skyrybos ženklais
-2. Kiek ir kokių klaidų rasta (skaičių)
+Analyze this Lithuanian text. Please:
+1. Check for spelling and grammar errors
+2. Add stress marks where needed
+3. Fix punctuation
+4. Count the total number of corrections made
 
-Pradinis tekstas:
+Text:
 \"""
 {text}
 \"""
 
-Pateikite atsakymą JSON formatu:
+Return only a JSON object with:
 {{
-    "corrected_text": "ištaisytas tekstas",
-    "error_count": klaidų skaičius
+    "corrected_text": "corrected text here",
+    "error_count": number of errors found
 }}
 """
 
@@ -79,21 +80,22 @@ Pateikite atsakymą JSON formatu:
             }]
         )
         
-        # Парсим JSON из ответа
         import json
         result = json.loads(response.content[0].text.strip())
-        
-        # Добавляем забавный комментарий
         result['feedback'] = get_random_feedback(result['error_count'])
         
         return result
     except Exception as e:
-        app.logger.error(f"Klaida kviečiant Claude API: {e}")
+        app.logger.error(f"API klaida: {e}")
         return {
-            "corrected_text": "Įvyko klaida apdorojant tekstą. Bandykite dar kartą vėliau.",
+            "corrected_text": text,
             "error_count": 0,
-            "feedback": "😅 Ups... Kažkas neveikia! Pabandyk dar kartą! 🔄"
+            "feedback": "😅 Atsiprašome, įvyko klaida! Bandykite dar kartą! 🔄"
         }
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/process', methods=['POST'])
 def process_text():
@@ -103,4 +105,4 @@ def process_text():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
