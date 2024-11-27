@@ -1,29 +1,32 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
 import openai
 import os
+import logging
 
 app = Flask(__name__)
-CORS(app)
 
-app = Flask(__name__)
+# Настройка логирования (опционально)
+logging.basicConfig(level=logging.INFO)
 
-# Установите ваш API-ключ OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Получение API-ключа OpenAI из переменных окружения
+openai_api_key = os.environ.get('OPENAI_API_KEY')
+
+if not openai_api_key:
+    # Если API-ключ не найден, выводим сообщение об ошибке
+    app.logger.error("API-ключ OpenAI не найден. Пожалуйста, установите переменную окружения OPENAI_API_KEY.")
+else:
+    openai.api_key = openai_api_key
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# Остальная часть вашего кода...
-
 
 @app.route('/process', methods=['POST'])
 def process_text():
     data = request.get_json()
     text = data['text']
 
-    # Обработка текста с помощью OpenAI GPT-4
+    # Обработка текста с помощью OpenAI
     processed_text = process_with_ai(text)
 
     return jsonify({'processed_text': processed_text})
@@ -54,12 +57,8 @@ def process_with_ai(text):
         processed_text = response['choices'][0]['message']['content'].strip()
         return processed_text
     except Exception as e:
-        # Логирование ошибки
-        app.logger.error(f"Ошибка при вызове OpenAI API: {e}")
-        # Возврат сообщения об ошибке клиенту (опционально, для отладки)
-        return f"Произошла ошибка при обработке текста: {e}"
-
-
+        app.logger.error(f"Ошибка при обращении к OpenAI API: {e}")
+        return "Произошла ошибка при обработке текста. Пожалуйста, попробуйте позже."
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
