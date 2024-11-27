@@ -46,8 +46,9 @@ def process_with_ai(text):
     )
 
     # Извлечение ответа
-    processed_text = response.choices[0].message.content.strip()
+    processed_text = response['choices'][0]['message']['content'].strip()
     return processed_text
+
 
 if __name__ == '__main__':
     app.run(debug=True)
