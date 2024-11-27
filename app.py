@@ -7,14 +7,12 @@ import logging
 app = Flask(__name__)
 CORS(app)
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-# Получение API-ключа Anthropic из переменных окружения
 anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
 
 if not anthropic_api_key:
-    app.logger.error("API-ключ Anthropic не найден. Пожалуйста, установите переменную окружения ANTHROPIC_API_KEY.")
+    app.logger.error("Anthropic API raktas nerastas.")
 else:
     anthropic = Anthropic(api_key=anthropic_api_key)
 
@@ -26,41 +24,43 @@ def index():
 def process_text():
     data = request.get_json()
     text = data['text']
-
-    # Обработка текста с помощью Claude
+    
     processed_text = process_with_claude(text)
-
     return jsonify({'processed_text': processed_text})
 
 def process_with_claude(text):
     prompt = f"""
-Проверьте текст на ошибки, расставьте знаки препинания и добавьте ударения в русских словах, используя символы, принятые в литовской орфографии. Представьте результат в виде исправленного текста.
+Išanalizuokite ir ištaisykite šį tekstą. Būtina:
+1. Ištaisyti visas rašybos ir gramatikos klaidas
+2. Sudėti teisingus skyrybos ženklus
+3. Pridėti kirčius žodžiuose naudojant simbolį ´ virš kirčiuotos balsės
+4. Suskirstyti tekstą į logines pastraipas, jei reikia
+5. Išsaugoti pradinę prasmę ir teksto stilių
 
-Текст:
+Pradinis tekstas:
 \"""
 {text}
 \"""
 
-Исправленный текст:
+Prašome grąžinti tik ištaisytą tekstą, be papildomų paaiškinimų.
 """
 
     try:
-        # Вызов Claude API
         response = anthropic.messages.create(
             model="claude-3-sonnet-20240229",
-            max_tokens=1024,
+            max_tokens=1500,
+            temperature=0.1,
             messages=[{
                 "role": "user",
                 "content": prompt
             }]
         )
-
-        # Извлечение ответа
+        
         processed_text = response.content[0].text.strip()
         return processed_text
     except Exception as e:
-        app.logger.error(f"Ошибка при вызове Claude API: {e}")
-        return "Произошла ошибка при обработке текста. Пожалуйста, попробуйте позже."
+        app.logger.error(f"Klaida kviečiant Claude API: {e}")
+        return "Įvyko klaida apdorojant tekstą. Bandykite dar kartą vėliau."
 
 if __name__ == '__main__':
     app.run()
