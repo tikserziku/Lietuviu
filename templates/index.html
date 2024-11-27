@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <title>Проверка текста</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
     <h1>Проверка текста</h1>
-    <textarea id="inputText" rows="10" cols="50" placeholder="Введите текст..."></textarea><br>
+    <textarea id="inputText" rows="10" cols="50" placeholder="Введите текст для проверки..."></textarea><br>
     <button id="submitButton">Проверить</button>
     <h2>Результат:</h2>
     <div id="outputText"></div>
