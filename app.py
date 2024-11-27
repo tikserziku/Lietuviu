@@ -1,20 +1,50 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+import openai
+import os
+
 app = Flask(__name__)
+
+# Установите ваш API-ключ OpenAI в переменной окружения или напрямую здесь
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/process', methods=['POST'])
 def process_text():
     data = request.get_json()
     text = data['text']
 
-    # Здесь происходит обработка текста
+    # Обработка текста с помощью OpenAI GPT-4
     processed_text = process_with_ai(text)
 
     return jsonify({'processed_text': processed_text})
 
 def process_with_ai(text):
-    # Псевдо-обработка текста: расстановка ударений и исправление ошибок
-    # Здесь вы можете использовать модели ИИ или библиотеки для обработки русского текста
-    return text  # Верните обработанный текст
+    prompt = f"""
+Проверьте текст на ошибки, расставьте знаки препинания и добавьте ударения в русских словах, используя символы, принятые в литовской орфографии. Представьте результат в виде исправленного текста.
+
+Текст:
+\"\"\"
+{text}
+\"\"\"
+
+Исправленный текст:
+"""
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.5,
+        max_tokens=500
+    )
+
+    # Извлечение ответа
+    processed_text = response.choices[0].message.content.strip()
+    return processed_text
 
 if __name__ == '__main__':
     app.run(debug=True)
