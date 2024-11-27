@@ -1,17 +1,30 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="lt">
 <head>
     <meta charset="UTF-8">
-    <title>Проверка текста</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teksto tikrinimas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Проверка текста</h1>
-    <textarea id="inputText" rows="10" cols="50" placeholder="Введите текст для проверки..."></textarea><br>
-    <button id="submitButton">Проверить</button>
-    <h2>Результат:</h2>
-    <div id="outputText"></div>
-
+    <div class="container">
+        <h1>Teksto tikrinimas</h1>
+        <div class="input-container">
+            <textarea id="inputText" placeholder="Įveskite arba įklijuokite tekstą čia..."></textarea>
+            <button id="pasteButton" class="secondary-button">
+                <span class="paste-icon">📋</span> Įklijuoti iš mainų srities
+            </button>
+        </div>
+        <button id="submitButton" class="primary-button">Tikrinti</button>
+        <div class="output-container">
+            <div id="feedbackContainer" class="feedback-container"></div>
+            <div class="error-count-container">
+                <span id="errorCount" class="error-count"></span>
+            </div>
+            <h2>Ištaisytas tekstas:</h2>
+            <div id="outputText"></div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
