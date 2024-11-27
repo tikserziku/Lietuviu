@@ -36,18 +36,25 @@ def process_with_ai(text):
 Исправленный текст:
 """
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.5,
-        max_tokens=500
-    )
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=500
+        )
 
-    # Извлечение ответа
-    processed_text = response['choices'][0]['message']['content'].strip()
-    return processed_text
+        # Извлечение ответа
+        processed_text = response['choices'][0]['message']['content'].strip()
+        return processed_text
+    except Exception as e:
+        # Логирование ошибки
+        app.logger.error(f"Ошибка при вызове OpenAI API: {e}")
+        # Возврат сообщения об ошибке клиенту (опционально, для отладки)
+        return f"Произошла ошибка при обработке текста: {e}"
+
 
 
 if __name__ == '__main__':
