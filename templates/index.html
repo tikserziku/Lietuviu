@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Проверка текста</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Проверка текста</h1>
@@ -12,6 +12,6 @@
     <h2>Результат:</h2>
     <div id="outputText"></div>
 
-    <script src="script.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
